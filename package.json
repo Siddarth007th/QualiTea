@@ -1,0 +1,9 @@
+{
+  "name": "qualitea-root",
+  "version": "1.0.0",
+  "description": "Root configuration for deploying QualiTea to Render",
+  "scripts": {
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "start": "npm start --prefix server"
+  }
+}

@@ -1,0 +1,369 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* Enable class-based dark mode (Tailwind v4) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  
+  /* Bespoke Premium Palette */
+  --color-brand-50: #f4f6ff;
+  --color-brand-100: #e5e9fa;
+  --color-brand-300: #b4bef4;
+  --color-brand-500: #6366f1; /* Primary Indigo */
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-900: #312e81;
+  
+  --color-accent-500: #ec4899; /* Pink/Fuchsia Accent */
+  
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #0B0F19; /* Midnight Blue */
+}
+
+/* ── Base resets ─────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark * {
+  scrollbar-color: #1e293b transparent;
+}
+
+body {
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  background: #f8fafc;
+  background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark body {
+  background: #0B0F19; /* Deep midnight blue */
+  background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+  color: #f1f5f9;
+}
+
+/* ── Premium Utilities ───────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 0 3px rgba(0,0,0,0.02);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.premium-shadow {
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.dark .premium-shadow {
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.brand-gradient-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(135deg, var(--color-brand-600) 0%, var(--color-accent-500) 100%);
+}
+
+.dark .brand-gradient-text {
+  background-image: linear-gradient(135deg, var(--color-brand-300) 0%, #f472b6 100%);
+}
+
+/* ── React Flow overrides ────────────────────────── */
+.react-flow__node {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.react-flow__node.selected {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Locked node subtle pulse */
+.qa-locked-node {
+  animation: locked-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes locked-pulse {
+
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Fail/Semi-Pass attention glow */
+.qa-attention-node {
+  animation: attention-glow 2s ease-in-out infinite;
+}
+
+@keyframes attention-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.15);
+  }
+}
+
+/* Smooth edge transitions */
+.react-flow__edge-path {
+  transition: stroke 0.5s ease, stroke-width 0.3s ease;
+}
+
+/* Edge delete button */
+.react-flow__edge .edge-delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.react-flow__edge:hover .edge-delete-btn {
+  opacity: 1;
+}
+
+/* ── Context Menu ────────────────────────────────── */
+.qa-context-menu {
+  animation: ctx-in 0.15s ease-out;
+}
+
+@keyframes ctx-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Confetti ────────────────────────────────────── */
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall 3s linear forwards;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* ── Priority badge ──────────────────────────────── */
+.priority-critical {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.priority-high {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.priority-medium {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.priority-low {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+/* ── Minimap styling ─────────────────────────────── */
+.react-flow__minimap {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dark .react-flow__minimap {
+  border-color: #334155 !important;
+  background: #1e293b !important;
+}
+
+/* ── Dark mode: React Flow ────────────────────────── */
+.dark .react-flow__background {
+  background: #0f172a !important;
+}
+
+.dark .react-flow__controls button {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+.dark .react-flow__controls button:hover {
+  background: #334155 !important;
+}
+
+/* ── Dark mode: Global overrides ─────────────────── */
+/* Cards and panels */
+.dark .bg-white {
+  background-color: #121827 !important;
+}
+
+.dark .bg-gray-50\/50,
+.dark .bg-gray-50\/30 {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+/* Borders */
+.dark .border-gray-200\/60,
+.dark .border-gray-200,
+.dark .border-gray-100 {
+  border-color: #334155 !important;
+}
+
+.dark .divide-gray-50>*+*,
+.dark .divide-gray-100>*+* {
+  border-color: #1e293b !important;
+}
+
+/* Text colors */
+.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+.dark .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Form elements */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #475569 !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-gray-50\/50:hover {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+/* Product cards expanded */
+.dark .bg-emerald-50\/30 {
+  background-color: rgba(6, 78, 59, 0.15) !important;
+}
+
+.dark .bg-red-50\/20 {
+  background-color: rgba(127, 29, 29, 0.15) !important;
+}
+
+/* Modals overlay */
+.dark .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Status cards */
+.dark .bg-brand-50 {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* Shadow adjustments */
+.dark [class*="shadow-"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Table rows */
+.dark tr:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+/* Context menu */
+.dark .qa-context-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* Slide-over panel */
+.dark .bg-white\/70 {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Road map node dark mode */
+.dark .react-flow__node .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* Status chip backgrounds */
+.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+}
