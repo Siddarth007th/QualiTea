@@ -1,29 +1,24 @@
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { db } = require('./db');
+const { Pool } = require('pg');
 
-function initDb() {
-    console.log('🔄 Initializing SQLite database...');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:gushi_2004@localhost:5432/qa_tracker',
+});
 
-    const schemaPath = path.resolve(__dirname, 'schema.sql');
-    let schemaSql;
-
+async function initDb() {
+    console.log('🔧 Initialising PostgreSQL schema...');
+    const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     try {
-        schemaSql = fs.readFileSync(schemaPath, 'utf8');
+        await pool.query(sql);
+        console.log('✅ Schema created / verified.');
     } catch (err) {
-        console.error('❌ Failed to read schema.sql:', err);
+        console.error('❌ Schema init failed:', err.message);
         process.exit(1);
+    } finally {
+        await pool.end();
     }
-
-    // Use db.exec() to run multiple SQL statements at once (like table schemas)
-    db.exec(schemaSql, (err) => {
-        if (err) {
-            console.error('❌ Error applying schema:', err.message);
-        } else {
-            console.log('✅ SQLite database schema initialized successfully');
-            console.log(`📂 Database saved at: ${path.resolve(__dirname, 'qualitea.db')}`);
-        }
-    });
 }
 
 initDb();

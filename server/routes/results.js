@@ -33,7 +33,6 @@ router.get('/', async (req, res, next) => {
     const values = [];
 
     if (product_id) {
-        // Validate uuid if provided
         const uuidSchema = z.string().uuid();
         try {
             uuidSchema.parse(product_id);
@@ -41,7 +40,7 @@ router.get('/', async (req, res, next) => {
             return res.status(400).json({ error: 'Invalid product_id format' });
         }
 
-        sql += ' WHERE r.product_id = ?';
+        sql += ' WHERE r.product_id = $1';
         values.push(product_id);
     }
 
@@ -63,7 +62,7 @@ router.post('/', async (req, res, next) => {
 
         const insertQuery = `
             INSERT INTO qa_results (id, attribute_id, product_id, status, notes, tested_by, difficulty)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
         await run(insertQuery, [
             id,
@@ -75,14 +74,13 @@ router.post('/', async (req, res, next) => {
             validated.difficulty || null
         ]);
 
-        const fetchResult = await queryOne('SELECT * FROM qa_results WHERE id = ?', [id]);
+        const fetchResult = await queryOne('SELECT * FROM qa_results WHERE id = $1', [id]);
         const newResult = fetchResult.rows[0];
 
         // Only Fail and Semi-Pass trigger email alerts
         if (EMAIL_STATUSES.includes(validated.status)) {
-            // Fetch names for email
-            const productRes = await queryOne('SELECT name FROM products WHERE id = ?', [validated.product_id]);
-            const attrRes = await queryOne('SELECT name FROM qa_attributes WHERE id = ?', [validated.attribute_id]);
+            const productRes = await queryOne('SELECT name FROM products WHERE id = $1', [validated.product_id]);
+            const attrRes = await queryOne('SELECT name FROM qa_attributes WHERE id = $1', [validated.attribute_id]);
 
             const productName = productRes.rows[0]?.name || 'Unknown Product';
             const attributeName = attrRes.rows[0]?.name || 'Unknown Attribute';
@@ -109,8 +107,8 @@ router.post('/', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
-        const result = await run('DELETE FROM qa_results WHERE id = ?', [id]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Result not found' });
+        const result = await run('DELETE FROM qa_results WHERE id = $1', [id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Result not found' });
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
         next(err);

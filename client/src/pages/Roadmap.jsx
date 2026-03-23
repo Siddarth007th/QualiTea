@@ -616,6 +616,7 @@ export default function Roadmap() {
     const [loading, setLoading] = useState(false)
     const [showAddForm, setShowAddForm] = useState(false)
     const [selectedNode, setSelectedNode] = useState(null)
+    const [contextMenu, setContextMenu] = useState(null)
     const [editMode, setEditMode] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [toastState, setToastState] = useState(null)
@@ -888,7 +889,7 @@ export default function Roadmap() {
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {attributes.length > 0 && <ProgressSummary attributes={attributes} statusMap={statusMap} />}
 
-                    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden" style={{ height: 600 }}>
+                    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden w-full h-[calc(100vh-300px)] flex flex-col min-h-[500px]">
                         {loading ? (
                             <div className="flex items-center justify-center h-full">
                                 <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />

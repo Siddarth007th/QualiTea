@@ -28,13 +28,14 @@ router.post('/', async (req, res, next) => {
         const id = crypto.randomUUID();
 
         await run(
-            'INSERT INTO team_members (id, name, email, role) VALUES (?, ?, ?, ?)',
+            'INSERT INTO team_members (id, name, email, role) VALUES ($1, $2, $3, $4)',
             [id, validated.name, validated.email, validated.role]
         );
-        const result = await queryOne('SELECT * FROM team_members WHERE id = ?', [id]);
+        const result = await queryOne('SELECT * FROM team_members WHERE id = $1', [id]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
-        if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        // PostgreSQL unique violation error code
+        if (err.code === '23505') {
             return res.status(400).json({ error: 'Email already exists' });
         }
         next(err);
@@ -45,8 +46,8 @@ router.post('/', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
     try {
-        const result = await run('DELETE FROM team_members WHERE id = ?', [id]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Team member not found' });
+        const result = await run('DELETE FROM team_members WHERE id = $1', [id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Team member not found' });
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
         next(err);

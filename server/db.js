@@ -1,64 +1,38 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-// Connect to a local SQLite database file, or a persistent disk path if provided
-const dbPath = process.env.DATABASE_STORAGE_PATH || path.resolve(__dirname, 'qualitea.db');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('❌ Error connecting to SQLite database:', err.message);
-  } else {
-    // Enable foreign key constraints in SQLite
-    db.run('PRAGMA foreign_keys = ON;');
-  }
+// Connect to PostgreSQL via DATABASE_URL in .env
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:gushi_2004@localhost:5432/qa_tracker',
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com')
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
-// Helper function to turn typical sqlite methods into awaitable promises
-// This way we can keep a similar async/await mental model in the route handlers
+pool.on('connect', () => {
+  console.log('✅ Connected to PostgreSQL');
+});
+
+pool.on('error', (err) => {
+  console.error('❌ PostgreSQL pool error:', err.message);
+});
+
+// Run a SELECT that returns multiple rows
 const query = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ rows });
-      }
-    });
-  });
+  return pool.query(sql, params).then(result => ({ rows: result.rows }));
 };
 
-// For INSERT/UPDATE/DELETE where we might only need the lastID or changes
-const run = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({
-          lastID: this.lastID,
-          changes: this.changes
-        });
-      }
-    });
-  });
-};
-
-// For fetching a single row
+// Run a SELECT that returns a single row
 const queryOne = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ rows: row ? [row] : [] });
-      }
-    });
-  });
+  return pool.query(sql, params).then(result => ({ rows: result.rows }));
 };
 
-module.exports = {
-  db,
-  query,
-  queryOne,
-  run
+// For INSERT / UPDATE / DELETE — returns { rowCount, lastID }
+const run = (sql, params = []) => {
+  return pool.query(sql, params).then(result => ({
+    rowCount: result.rowCount,
+    changes: result.rowCount,          // compat alias
+    lastID: result.rows[0]?.id || null // only if RETURNING id
+  }));
 };
+
+module.exports = { pool, query, queryOne, run };

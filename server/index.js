@@ -45,5 +45,5 @@ app.use((err, req, res, next) => {
 // ── Start ──────────────────────────────────────────────
 app.listen(PORT, () => {
     console.log(`🍵  QualiTea running on http://localhost:${PORT}`);
-    console.log(`💽  Using SQLite database`);
+    console.log(`💽  Using PostgreSQL database`);
 });

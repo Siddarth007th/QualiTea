@@ -23,7 +23,7 @@ router.get('/', async (_req, res, next) => {
 // GET /api/products/:id — single product
 router.get('/:id', async (req, res, next) => {
     try {
-        const result = await queryOne('SELECT * FROM products WHERE id = ?', [req.params.id]);
+        const result = await queryOne('SELECT * FROM products WHERE id = $1', [req.params.id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
         res.json(result.rows[0]);
     } catch (err) {
@@ -38,10 +38,10 @@ router.post('/', async (req, res, next) => {
         const id = crypto.randomUUID();
 
         await run(
-            'INSERT INTO products (id, name, description) VALUES (?, ?, ?)',
+            'INSERT INTO products (id, name, description) VALUES ($1, $2, $3)',
             [id, validated.name, validated.description || null]
         );
-        const result = await queryOne('SELECT * FROM products WHERE id = ?', [id]);
+        const result = await queryOne('SELECT * FROM products WHERE id = $1', [id]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         next(err);
@@ -52,8 +52,8 @@ router.post('/', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
     try {
-        const result = await run('DELETE FROM products WHERE id = ?', [id]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Product not found' });
+        const result = await run('DELETE FROM products WHERE id = $1', [id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Product not found' });
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
         next(err);

@@ -26,7 +26,7 @@ const attributeUpdateSchema = z.object({
 router.get('/product/:productId', async (req, res, next) => {
     try {
         const result = await query(
-            'SELECT * FROM qa_attributes WHERE product_id = ? ORDER BY sort_order ASC, created_at ASC',
+            'SELECT * FROM qa_attributes WHERE product_id = $1 ORDER BY sort_order ASC, created_at ASC',
             [req.params.productId]
         );
         res.json(result.rows);
@@ -43,7 +43,7 @@ router.post('/', async (req, res, next) => {
 
         await run(
             `INSERT INTO qa_attributes (id, product_id, name, description, prerequisite_id, sort_order, priority)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
                 id,
                 validated.product_id,
@@ -54,7 +54,7 @@ router.post('/', async (req, res, next) => {
                 validated.priority || 'medium'
             ]
         );
-        const result = await queryOne('SELECT * FROM qa_attributes WHERE id = ?', [id]);
+        const result = await queryOne('SELECT * FROM qa_attributes WHERE id = $1', [id]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         next(err);
@@ -73,11 +73,11 @@ router.put('/:id', async (req, res, next) => {
                 return res.status(400).json({ error: 'Cannot set self as prerequisite' });
             }
 
-            const attrResult = await queryOne('SELECT product_id FROM qa_attributes WHERE id = ?', [id]);
+            const attrResult = await queryOne('SELECT product_id FROM qa_attributes WHERE id = $1', [id]);
             if (attrResult.rows.length === 0) return res.status(404).json({ error: 'Attribute not found' });
 
             const product_id = attrResult.rows[0].product_id;
-            const allAttrsResult = await query('SELECT id, prerequisite_id FROM qa_attributes WHERE product_id = ?', [product_id]);
+            const allAttrsResult = await query('SELECT id, prerequisite_id FROM qa_attributes WHERE product_id = $1', [product_id]);
 
             let current = validated.prerequisite_id;
             const visited = new Set([id]);
@@ -93,40 +93,41 @@ router.put('/:id', async (req, res, next) => {
 
         const updates = [];
         const values = [];
+        let paramIdx = 1;
 
         if (validated.name !== undefined) {
-            updates.push(`name = ?`);
+            updates.push(`name = $${paramIdx++}`);
             values.push(validated.name);
         }
         if (validated.description !== undefined) {
-            updates.push(`description = ?`);
+            updates.push(`description = $${paramIdx++}`);
             values.push(validated.description);
         }
         if (validated.prerequisite_id !== undefined) {
-            updates.push(`prerequisite_id = ?`);
+            updates.push(`prerequisite_id = $${paramIdx++}`);
             values.push(validated.prerequisite_id || null);
         }
         if (validated.sort_order !== undefined) {
-            updates.push(`sort_order = ?`);
+            updates.push(`sort_order = $${paramIdx++}`);
             values.push(validated.sort_order);
         }
         if (validated.priority !== undefined) {
-            updates.push(`priority = ?`);
+            updates.push(`priority = $${paramIdx++}`);
             values.push(validated.priority);
         }
 
         if (updates.length === 0) {
-            const current = await queryOne('SELECT * FROM qa_attributes WHERE id = ?', [id]);
+            const current = await queryOne('SELECT * FROM qa_attributes WHERE id = $1', [id]);
             return res.json(current.rows[0]);
         }
 
         values.push(id);
-        const sql = `UPDATE qa_attributes SET ${updates.join(', ')} WHERE id = ?`;
+        const sql = `UPDATE qa_attributes SET ${updates.join(', ')} WHERE id = $${paramIdx}`;
 
         const updateResult = await run(sql, values);
-        if (updateResult.changes === 0) return res.status(404).json({ error: 'Attribute not found' });
+        if (updateResult.rowCount === 0) return res.status(404).json({ error: 'Attribute not found' });
 
-        const finalResult = await queryOne('SELECT * FROM qa_attributes WHERE id = ?', [id]);
+        const finalResult = await queryOne('SELECT * FROM qa_attributes WHERE id = $1', [id]);
         res.json(finalResult.rows[0]);
     } catch (err) {
         next(err);
@@ -137,8 +138,8 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
     try {
-        const result = await run('DELETE FROM qa_attributes WHERE id = ?', [id]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Attribute not found' });
+        const result = await run('DELETE FROM qa_attributes WHERE id = $1', [id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Attribute not found' });
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
         next(err);
