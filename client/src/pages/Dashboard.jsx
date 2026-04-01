@@ -78,10 +78,9 @@ export default function Dashboard() {
             fetch('/api/results').then((r) => r.json()),
         ]).then(async ([p, r]) => {
             const prods = Array.isArray(p) ? p : []
-            setProducts(prods)
-            setResults(Array.isArray(r) ? r : [])
+            const resData = Array.isArray(r) ? r : []
 
-            // Load attributes for all products
+            // Load attributes for all products BEFORE setting state
             const attrMap = {}
             await Promise.all(prods.map(async (prod) => {
                 try {
@@ -89,7 +88,10 @@ export default function Dashboard() {
                     attrMap[prod.id] = Array.isArray(attrs) ? attrs : []
                 } catch { attrMap[prod.id] = [] }
             }))
+            
             setAllAttributes(attrMap)
+            setProducts(prods)
+            setResults(resData)
         }).catch(() => { }).finally(() => setLoading(false))
     }, [])
 
@@ -101,12 +103,23 @@ export default function Dashboard() {
             const res = await fetch('/api/results', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, attribute_id: attributeId, status, notes: `Quick ${status} from Dashboard`, tested_by: '' }),
+                body: JSON.stringify({ 
+                    product_id: productId, 
+                    attribute_id: attributeId, 
+                    status, 
+                    notes: `Quick ${status} from Dashboard`, 
+                    tested_by: null,
+                    difficulty: null
+                }),
             })
             const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || 'Failed to update status')
+                return
+            }
             toast.success(data._emailTriggered ? `📧 Alert sent — ${status}` : `Marked as ${status}`)
             loadAll()
-        } catch { toast.error('Failed to update status') }
+        } catch { toast.error('Network error while updating status') }
     }
 
     // Product metrics
@@ -132,30 +145,39 @@ export default function Dashboard() {
             const passCount = counts['Pass'] || 0
             const failCount = counts['Fail'] || 0
             const semiCount = counts['Semi-Pass'] || 0
-            const total = latest.length
+            
+            const totalTested = latest.length
+            const totalAttributes = (allAttributes[p.id] || []).length
 
             totalPassCount += passCount
-            totalTestedCount += total
+            totalTestedCount += totalTested
 
             let riskScore = 0
             latest.forEach((r) => { riskScore += RISK_WEIGHTS[r.status] || 0 })
             totalRiskScore += riskScore
 
             const hasIssues = failCount > 0 || semiCount > 0
-            const allPassed = total > 0 && passCount === total
-            if (allPassed) passedProducts++
-            else if (hasIssues) failedProducts++
-            else if (total > 0) inProgressProducts++
+            const allPassed = totalAttributes > 0 && passCount === totalAttributes
+            
+            if (allPassed) {
+                passedProducts++
+            } else if (totalAttributes > 0) {
+                inProgressProducts++
+                if (hasIssues) {
+                    failedProducts++ // It is In Progress AND has issues.
+                }
+            }
 
-            const passPercent = total > 0 ? Math.round((passCount / total) * 100) : 0
+            const passPercent = totalAttributes > 0 ? Math.round((passCount / totalAttributes) * 100) : 0
 
             productDetails.push({
                 ...p, passCount, failCount, semiCount,
-                totalTested: total, passPercent, riskScore, counts, latestMap,
+                totalTested, totalAttributes, passPercent, riskScore, counts, latestMap,
             })
         })
 
         productDetails.sort((a, b) => b.riskScore - a.riskScore)
+        // Pass rate is out of actual tests performed, not total possible attributes.
         const overallPassRate = totalTestedCount > 0 ? Math.round((totalPassCount / totalTestedCount) * 100) : 0
 
         return { passedProducts, failedProducts, inProgressProducts, productDetails, overallPassRate, totalRiskScore }
@@ -231,18 +253,18 @@ export default function Dashboard() {
                                                     ))}
                                                     {p.totalTested === 0 && <span className="text-[10px] text-slate-400">No tests yet</span>}
                                                 </div>
-                                                {p.totalTested > 0 && (
+                                                {p.totalAttributes > 0 && (
                                                     <div className="mt-3">
                                                         <div className="flex items-center justify-between mb-1.5">
                                                             <span className="text-xs font-semibold text-slate-700"><AnimatedPercent value={p.passPercent} /></span>
-                                                            <span className="text-[10px] text-slate-400">{p.passCount}/{p.totalTested} passed</span>
+                                                            <span className="text-[10px] text-slate-400">{p.passCount}/{p.totalAttributes} passed</span>
                                                         </div>
                                                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
                                                             {Object.entries(p.counts).map(([status, count]) => count > 0 ? (
                                                                 <motion.div key={status}
                                                                     className={`h-full ${segmentColors[status] || 'bg-slate-300'}`}
                                                                     initial={{ width: 0 }}
-                                                                    animate={{ width: `${(count / p.totalTested) * 100}%` }}
+                                                                    animate={{ width: `${(count / p.totalAttributes) * 100}%` }}
                                                                     transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.3 }} />
                                                             ) : null)}
                                                         </div>

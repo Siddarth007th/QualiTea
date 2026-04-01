@@ -29,13 +29,7 @@ const generateData = () => {
 
     // 2. Products
     const productNames = [
-        'Widget Pro Max', 'SuperCharger 5000', 'CloudSync Desktop', 
-        'EchoBase AI', 'Quantum Router', 'Nova Smartwatch', 
-        'Zenith E-Reader', 'Aura Smart Thermostat', 'GigaDrive SSD',
-        'Nimbus Drone', 'OmniVision Camera', 'Apex Mechanical Keyboard', 
-        'Titan Power Bank', 'Luna Sleep Tracker', 'Solaris Smart Bulb',
-        'Vortex Vacuum', 'Infinity Display', 'Prism Projector', 
-        'Nebula Smart Scale', 'Pulse Fitness Tracker'
+        'Widget Pro Max', 'SuperCharger 5000', 'CloudSync Desktop'
     ];
 
     productNames.forEach((name, i) => {
@@ -47,7 +41,7 @@ const generateData = () => {
         });
 
         // 3. Attributes for each product
-        for(let j=1; j<=15; j++) {
+        for(let j=1; j<=3; j++) {
             const attr_id = crypto.randomUUID();
             attributes.push({
                 id: attr_id,

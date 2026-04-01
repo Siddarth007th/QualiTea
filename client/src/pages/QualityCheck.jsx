@@ -68,50 +68,70 @@ export default function QualityCheck() {
     const handleAddAttribute = async (e) => {
         e.preventDefault()
         if (!attrForm.name.trim()) return
-        await fetch('/api/attributes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...attrForm,
-                product_id: selectedProduct.id,
-                prerequisite_id: attrForm.prerequisite_id || null,
-            }),
-        })
-        setAttrForm({ name: '', description: '', prerequisite_id: '', sort_order: 0, priority: 'medium' })
-        setShowAttrForm(false)
-        loadProductData(selectedProduct)
+        try {
+            const res = await fetch('/api/attributes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...attrForm,
+                    product_id: selectedProduct.id,
+                    prerequisite_id: attrForm.prerequisite_id || null,
+                }),
+            })
+            if (!res.ok) throw new Error('Failed to add attribute')
+            setAttrForm({ name: '', description: '', prerequisite_id: '', sort_order: 0, priority: 'medium' })
+            setShowAttrForm(false)
+            loadProductData(selectedProduct)
+        } catch (err) {
+            toast.error(err.message)
+        }
     }
 
     const handleDeleteAttribute = async (attr) => {
         if (!confirm(`Delete attribute "${attr.name}"? This will also remove all its results.`)) return
         try {
-            await fetch(`/api/attributes/${attr.id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/attributes/${attr.id}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Failed to delete attribute')
             toast.success(`"${attr.name}" deleted`)
             loadProductData(selectedProduct)
-        } catch {
-            toast.error('Failed to delete attribute')
+        } catch (err) {
+            toast.error(err.message)
         }
     }
 
     const handleSubmitResult = async (e) => {
         e.preventDefault()
         if (!resultForm.attribute_id) return
-        const res = await fetch('/api/results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...resultForm,
-                product_id: selectedProduct.id,
-            }),
-        })
-        const data = await res.json()
-        if (data._emailTriggered) {
-            toast(`Alert email triggered for ${resultForm.status} status`, { icon: '📧' })
-        } else {
-            toast.success('Result recorded successfully')
+
+        try {
+            const res = await fetch('/api/results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...resultForm,
+                    product_id: selectedProduct.id,
+                    difficulty: resultForm.difficulty || null,
+                    tested_by: resultForm.tested_by || null,
+                    notes: resultForm.notes || null
+                }),
+            })
+            const data = await res.json()
+
+            if (!res.ok) {
+                toast.error(data.error || 'Failed to submit result')
+                return
+            }
+
+            if (data._emailTriggered) {
+                toast(`Alert email triggered for ${resultForm.status} status`, { icon: '📧' })
+            } else {
+                toast.success('Result recorded successfully')
+            }
+            setResultForm({ attribute_id: '', status: 'Pass', difficulty: '', notes: '', tested_by: '' })
+            loadProductData(selectedProduct)
+        } catch (err) {
+            toast.error('Network error occurred')
         }
-        setResultForm({ attribute_id: '', status: 'Pass', difficulty: '', notes: '', tested_by: '' })
-        loadProductData(selectedProduct)
     }
 
     // Get latest result for a given attribute
